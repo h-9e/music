@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yi听最新音乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lyric-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .lyric-wrapper {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            transition: top 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .lyric-line {
+            font-size: 3vw;
+            line-height: 2.5;
+            opacity: 0.6;
+            transition: opacity 0.3s ease, font-size 0.3s ease;
+        }
+        .lyric-line.active {
+            opacity: 1;
+            color: #409eff;
+            font-size: 3.5vw;
+        }
+        /* 音频控件默认隐藏，调试时可改为opacity:1 */
+        audio {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            opacity: 0;
+        }
+        /* 首次加载提示（可选） */
+        .play-tip {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2vw;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="lyric-container" id="lyricContainer">
+        <div class="lyric-wrapper" id="lyricWrapper"></div>
+    </div>
+    <div class="play-tip" id="playTip">点击页面播放</div>
+
+    <audio id="audioPlayer" controls loop>
+        <source src="Jingwei.flac" type="audio/mpeg">
+        你的浏览器不支持
+    
+
+    <script>
+        const audioPlayer = document.getElementById('audioPlayer');
+        const lyricWrapper = document.getElementById('lyricWrapper');
+        const playTip = document.getElementById('playTip');
+        const containerHeight = document.getElementById('lyricContainer').clientHeight;
+        let isPlayInitiated = false; // 标记是否已触发过播放
+
+        // 替换为目标LRC歌词
+        const lrcText = `
+[00:00.000] 作词 : 勤
+[00:01.000] 编曲 : H❤怡
+[00:08.686]拂晓的天光里含着无限的温柔
+[00:16.958]盖过喧嚣和忧愁
+[00:21.168]重要的人藏在心头
+[00:25.281]每一缕光芒都值得拥有无限的温柔
+[00:33.109]这一刻，别再紧皱眉头，已经伴随了自由
+[00:57.485]越过不停的时间轴
+[01:01.407]路途中清点所有
+[01:06.000]再无往事可以回头，重要的人藏在心头
+[01:14.000]每一缕光芒都值得拥有无限的温柔
+[01:22.047]这一刻，别再紧皱眉头，已经伴随了自由
+[01:30.563]清风中伫立
+[01:34.101]照顾好你坚定的眼眸
+[01:38.533]心灵平静，无需理由
+[01:42.292]照顾好你微笑的眼眸
+[01:46.401]还有岁月，无限温柔
+[01:50.815]照顾好你勇敢的眼眸
+[01:54.827]为了美好挥起拳头
+[01:58.682]照顾好你微笑的眼眸
+[02:02.835]还有岁月，无限温柔
+[02:14.801]拂晓的天光里含着无限的温柔
+[02:22.870]盖过喧嚣和忧愁
+[02:27.531]重要的人藏在心头
+[02:31.290]每一缕光芒都值得拥有无限的温柔
+[02:39.309]这一刻，别再紧皱眉头，已经伴随了自由
+[02:48.160]照顾好你坚定的眼眸，无需理由
+[02:56.795]重要的人珍藏在心头
+[03:00.480]光芒都值得拥有
+[03:04.107]越过不停的时间轴
+[03:08.516]路途中清点所有
+[03:11.769]再无往事可以回头，重要的人藏在心头
+[03:20.290]每一缕光芒都值得拥有无限的温柔
+[03:28.303]这一刻，别再紧皱眉头，已经伴随了自由
+[03:36.229]照顾好你坚定的眼眸
+[03:40.236]心灵平静，无需理由
+[03:43.996]照顾好你微笑的眼眸
+[03:48.254]还有岁月，无限温柔
+[03:52.768]照顾好你勇敢的眼眸
+[03:56.271]为了美好挥起拳头
+[04:00.506]照顾好你微笑的眼眸
+[04:04.290]还有岁月，无限温柔
+[04:20.271]照顾好你坚定的眼眸
+[04:25.009]心灵平静，无需理由
+[04:28.939]照顾好你微笑的眼眸
+[04:32.697]还有岁月，无限温柔
+[04:37.457]照顾好你勇敢的眼眸
+[04:41.219]为了美好挥起拳头
+[04:45.475]照顾好你微笑的眼眸
+[04:49.308]还有岁月，无限温柔
+        `;
+
+        // LRC歌词解析函数 - 适配三位毫秒 [mm:ss.xxx]
+        function parseLrc(lrcStr) {
+            const lrcArr = [];
+            const regex = /\[(\d{2}):(\d{2})\.(\d{3})\](.*)/g;
+            let match;
+            while ((match = regex.exec(lrcStr)) !== null) {
+                const minutes = parseInt(match[1]);
+                const seconds = parseInt(match[2]);
+                const milliseconds = parseInt(match[3]);
+                const totalTime = minutes * 60 + seconds + milliseconds / 1000;
+                const text = match[4].trim();
+                if (text) lrcArr.push({ time: totalTime, text });
+            }
+            return lrcArr;
+        }
+
+        // 渲染歌词
+        const lyricData = parseLrc(lrcText);
+        lyricData.forEach(item => {
+            const line = document.createElement('div');
+            line.className = 'lyric-line';
+            line.textContent = item.text;
+            lyricWrapper.appendChild(line);
+        });
+        const lyricLines = document.querySelectorAll('.lyric-line');
+        const lineHeight = lyricLines[0]?.clientHeight || 80;
+        const centerOffset = (containerHeight - lineHeight) / 2;
+
+        // 歌词滚动与高亮逻辑
+        function updateLyric() {
+            const currentTime = audioPlayer.currentTime;
+            for (let i = 0; i < lyricData.length; i++) {
+                const { time } = lyricData[i];
+                const nextTime = lyricData[i + 1]?.time || Infinity;
+                if (currentTime >= time && currentTime < nextTime) {
+                    lyricLines.forEach(line => line.classList.remove('active'));
+                    lyricLines[i].classList.add('active');
+                    const scrollTop = i * lineHeight - centerOffset;
+                    lyricWrapper.style.top = `-${scrollTop}px`;
+                    break;
+                }
+            }
+        }
+
+        // 完善自动播放逻辑 - 页面加载后尝试自动播放
+        window.addEventListener('load', async () => {
+            try {
+                await audioPlayer.play();
+                isPlayInitiated = true;
+                audioPlayer.addEventListener('timeupdate', updateLyric);
+            } catch (err) {
+                // 浏览器限制自动播放时，显示提示
+                playTip.style.opacity = 1;
+                // 点击页面任意位置触发播放
+                document.addEventListener('click', async () => {
+                    if (!isPlayInitiated) {
+                        await audioPlayer.play();
+                        isPlayInitiated = true;
+                        playTip.style.opacity = 0;
+                        audioPlayer.addEventListener('timeupdate', updateLyric);
+                    }
+                }, { once: true }); // 只触发一次点击播放
+            }
+        });
+    </script>
+</body>
+</html>
