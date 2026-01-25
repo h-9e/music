@@ -56,7 +56,7 @@
 </head>
 <body>
     <div class="birthday-text">生日快乐 ✨</div>
-    <div class="wish-text">愿你平安喜乐，岁岁无忧，17岁咯，万事顺意 ❤️</div>
+    <div class="wish-text">愿你平安喜乐，岁岁无忧，万事顺意 ❤️</div>
 
     <!-- ✅ 修复1：音乐标签 最优配置+正确音乐地址 -->
     <audio id="music" src="./Happy.mp3" preload="auto" loop></audio>
@@ -94,7 +94,7 @@
         // ========== ✅ 修复2：背景图轮播 ==========
         const bgImages = [
             "https://s3.bmp.ovh/imgs/2025/12/29/6e698efa03bab628.jpg",
-            "./Happy.jpg",
+            "./sr.jpg",
             "https://s3.bmp.ovh/imgs/2025/12/29/6e698efa03bab628.jpg"
         ];
         const bgChangeTime = 6000;
@@ -108,7 +108,7 @@
         setInterval(changeBgImage, bgChangeTime);
 
         // ========== ✅ 飘落特效==========
-        const floatContent = ['威懿快乐', '🎈', '❤️', '✨', '平安喜乐', '岁岁欢愉', '暴才暴美', '万事顺意'];
+        const floatContent = ['日日快乐', '🎈', '❤️', '✨', '平安喜乐', '岁岁欢愉', '暴才暴美', '万事顺意'];
         const createFloatItem = () => {
             const item = document.createElement('div');
             item.className = 'float-item';
